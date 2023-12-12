@@ -2,9 +2,12 @@ package com.dinesh.taskmanager.controllers;
 
 import com.dinesh.taskmanager.dtos.CreateTaskRequestDto;
 import com.dinesh.taskmanager.dtos.ErrorResponseDto;
+import com.dinesh.taskmanager.dtos.TaskNotesResponseDto;
 import com.dinesh.taskmanager.dtos.UpdateTaskRequestDto;
 import com.dinesh.taskmanager.entities.Task;
+import com.dinesh.taskmanager.services.NoteService;
 import com.dinesh.taskmanager.services.TaskService;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +22,10 @@ import java.util.ArrayList;
 public class TaskController {
     @Autowired
     private TaskService taskService;
+    @Autowired
+    private NoteService noteService;
+    private ModelMapper mapper = new ModelMapper();
+
     @GetMapping("")
     public ResponseEntity<ArrayList<Task>> getTasks() {
         ArrayList<Task> tasks = taskService.getTasks();
@@ -26,14 +33,15 @@ public class TaskController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getTaskById(@PathVariable("id") Integer id) {
+    public ResponseEntity<TaskNotesResponseDto> getTaskById(@PathVariable("id") Integer id) {
         Task task = taskService.getTaskById(id);
-
+        var notes = noteService.getNotesByTaskId(id);
         if (task == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-
-        return ResponseEntity.ok(task);
+        var taskResponse = mapper.map(task, TaskNotesResponseDto.class);
+        taskResponse.setNotes(notes);
+        return ResponseEntity.ok(taskResponse);
     }
 
     @PatchMapping("/{id}")
